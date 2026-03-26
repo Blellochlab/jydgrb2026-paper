@@ -8,7 +8,6 @@ library(dplyr)
 library(tidyr)
 library(patchwork)
 library(ggplot2)
-library(ComplexHeatmap)
 
 # Define relative paths for portability
 data_dir <- "./data"
@@ -60,6 +59,10 @@ ggsave(file.path(plot_dir, "global_umap_seuratclusters.pdf"), plot = p2, width=9
 p3 <- VlnPlot(dat, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, group.by = "seurat_clusters", pt.size = FALSE)
 ggsave(file.path(plot_dir, "global_violin_qc_scores_by_cluster.pdf"), plot = p3, width=300, height=75, units="mm")
 
+# Global Il12b Violin
+p_il12 <- VlnPlot(dat, features = "Il12b", pt.size = 0)
+ggsave(file.path(plot_dir, "global_violin_Il12b.pdf"), plot = p_il12, width=150, height=100, units="mm")
+
 # Fraction by condition (Global)
 meta.data <- dat[[]]
 counts <- group_by(meta.data, condition, replicate, seurat_clusters) %>% 
@@ -68,6 +71,9 @@ counts <- group_by(meta.data, condition, replicate, seurat_clusters) %>%
   mutate(total_cells = sum(count), fraction = count / total_cells) %>%
   ungroup()
 counts$condition_replicate <- interaction(counts$replicate, counts$condition, sep = "_")
+
+# Save global fractions
+write.csv(counts, file.path(plot_dir, "global_cluster_fractions.csv"), row.names = FALSE)
 
 # Dotplot of global marker genes (Excluding low quality cluster 8)
 dat_subset <- dat[, dat$seurat_clusters != 8]
@@ -98,7 +104,7 @@ p4 <- DotPlot(object = dat_subset, features=global_markers, cluster.idents=TRUE,
 ggsave(file.path(plot_dir, "global_dotplot_cluster_markers.pdf"), plot = p4, width=700, height=150, units="mm", limitsize = FALSE)
 
 # Clean up memory slightly without losing core variables
-rm(dat_subset, all.genes, meta.data, counts, p1, p2, p3, p4)
+rm(dat_subset, all.genes, meta.data, counts, p1, p2, p3, p4, p_il12)
 gc()
 
 # -----------------------------------------------------------------------------
